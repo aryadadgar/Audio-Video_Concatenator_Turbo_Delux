@@ -4,14 +4,20 @@ This branch contains an NDK-native prototype for the audio-video concatenation t
 
 Goals
 - x86-only native CLI built with Android NDK (minSdk 21)
-- Per-pair behavior: for each mp4 video and its paired audio, if audio is shorter than the video, loop the audio to match the video duration; if longer, trim it.
-- No ffmpeg; use Android NDK Media APIs (AMediaExtractor / AMediaCodec / AMediaMuxer / avfilter not used)
+- Per-pair behavior: for each mp4 video and its paired music, if music is shorter than the video, loop the music to match the video duration; if music is longer, trim it.
+- No ffmpeg; use Android NDK Media APIs (AMediaExtractor / AMediaCodec / AMediaMuxer)
 
-What is included
-- native/CMakeLists.txt — CMake file for building the native CLI
-- native/src/main.cpp — implementation scaffold: scanning, pairing, duration probing and placeholders for the actual mux/encode loop
+Current status
+- Scaffold committed: CMakeLists + README + main.cpp stub that scans directory, pairs files, and probes durations.
+- Added CLI flags to control attenuation:
+  --attenuate-percent <0-100>  : reduce volume by this percent (e.g., 96 means leave 4% of original)
+  --volume-factor <0.0-1.0>    : directly specify multiplier to apply to PCM (e.g., 0.04)
 
-How to build (local Android NDK)
+Default behavior
+- If neither flag provided, default is --attenuate-percent 96 (i.e., leave 4% of original volume).
+- Attenuation is applied after looping/trimming and before encoding the audio track.
+
+How to build
 1. Set NDK path (example):
    export ANDROID_NDK_HOME=/path/to/android-ndk
 2. Create build directory and run cmake with the NDK toolchain:
@@ -19,17 +25,13 @@ How to build (local Android NDK)
    cmake -DANDROID_ABI=x86 -DANDROID_PLATFORM=android-21 -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake ..
    cmake --build . -- -j4
 
-This will produce a native_concat executable under native/build/
-
-How to run on an Android device (adb)
-- Push binary to device and run in shell:
+How to run (example)
+- Reduce audio by 96% (leave 4%):
   adb push native/build/native_concat /data/local/tmp/native_concat
   adb shell
   su
   chmod +x /data/local/tmp/native_concat
-  /data/local/tmp/native_concat /sdcard/Media/Clips
+  /data/local/tmp/native_concat --attenuate-percent 96 /sdcard/Media/Clips
 
-Notes & next steps
-- The current implementation is a scaffold: main.cpp probes file durations and performs pairing. The core media processing (decoding audio, looping, encoding, muxing) is marked as TODO and will be implemented next.
-- After you verify the build works on your environment, I'll implement the media processing loop, using AMediaCodec decoders/encoders and AMediaMuxer for output.
-
+Next steps
+- Implement the full media pipeline: audio decode+loop+scale+encode and muxing with video (copy or re-encode). This is the next commit.

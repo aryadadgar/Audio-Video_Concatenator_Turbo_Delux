@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <cerrno>
 
 #include <media/NdkMediaExtractor.h>
 #include <media/NdkMediaFormat.h>
@@ -44,7 +45,8 @@ static void vb_like_sort(vector<string> &v) {
 static int64_t probe_duration_us(const string &path) {
     int fd = open(path.c_str(), O_RDONLY);
     if (fd < 0) {
-        perror("open");
+        // perror suppressed to avoid noisy logs in adb; print errno on failure
+        std::cerr << "open(" << path << ") failed: " << strerror(errno) << "\n";
         return -1;
     }
     AMediaExtractor *ext = AMediaExtractor_new();
@@ -81,17 +83,20 @@ static int64_t probe_duration_us(const string &path) {
 }
 
 static void print_usage(const char *prog) {
-    std::cout << "Usage: " << prog << " <directory-or-list-of-files>\n";
+    std::cout << "Usage: " << prog << " [--attenuate-percent N | --volume-factor F] <directory-or-list-of-files>\n";
     std::cout << "If a directory is given, all files inside are scanned.\n";
+    std::cout << "--attenuate-percent N : reduce audio by N percent (e.g., 96 means leave 4% of original)\n";
+    std::cout << "--volume-factor F     : multiply audio samples by F (0.0-1.0) directly\n";
 }
 
 // Placeholder for the actual per-pair processing:
 // - decode audio
 // - loop audio by re-feeding decoded samples (or using codec-level looping)
-// - encode audio and video to target profile
-// - mux into segment_i.mp4
+// - apply volume scaling to PCM samples (volume_factor)
+// - encode audio to AAC
+// - mux audio + video (copy video stream or re-encode)
 // For now this is a stub which only prints what it would do.
-static int process_pair_stub(const string &videoPath, const string &audioPath, int pairIndex) {
+static int process_pair_stub(const string &videoPath, const string &audioPath, int pairIndex, double volume_factor) {
     int64_t vdur = probe_duration_us(videoPath);
     int64_t adur = probe_duration_us(audioPath);
     std::cout << "Pair " << pairIndex << ":\n";
@@ -114,8 +119,10 @@ static int process_pair_stub(const string &videoPath, const string &audioPath, i
         std::cout << "  [INFO] Audio matches video duration.\n";
     }
 
-    // TODO: Implement decoding audio, looping, encoding, muxing using AMediaCodec & AMediaMuxer.
-    // This will be implemented in the next commit.
+    std::cout << "  [INFO] Applied volume factor: " << volume_factor << " (" << (volume_factor * 100.0) << "% of original)\n";
+
+    // TODO: Implement decoding audio, looping by seeking, applying PCM scaling by volume_factor,
+    //       encoding to AAC, muxing with video. This will be implemented in the next commit.
 
     return 0;
 }
@@ -126,14 +133,47 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    double volume_factor = -1.0; // negative => not set
+    vector<string> inputs;
+
+    // Simple flag parsing
+    for (int i = 1; i < argc; ++i) {
+        string arg = argv[i];
+        if (arg == "--attenuate-percent" && i + 1 < argc) {
+            int p = atoi(argv[++i]);
+            if (p < 0) p = 0; if (p > 100) p = 100;
+            volume_factor = 1.0 - (p / 100.0);
+        } else if (arg == "--volume-factor" && i + 1 < argc) {
+            volume_factor = atof(argv[++i]);
+            if (volume_factor < 0.0) volume_factor = 0.0;
+            if (volume_factor > 1.0) volume_factor = 1.0;
+        } else if (arg == "--help" || arg == "-h") {
+            print_usage(argv[0]);
+            return 0;
+        } else {
+            inputs.emplace_back(arg);
+        }
+    }
+
+    // Default attenuation: reduce by 96% (leave 4% of original)
+    if (volume_factor < 0.0) {
+        volume_factor = 0.04; // leave 4%
+    }
+
+    if (inputs.empty()) {
+        std::cerr << "No input files or directories provided.\n";
+        print_usage(argv[0]);
+        return 1;
+    }
+
     vector<string> files;
-    string firstArg = argv[1];
+    string firstArg = inputs[0];
     struct stat st;
     if (stat(firstArg.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) {
         files = list_files_in_dir(firstArg);
     } else {
-        // treat all args as files
-        for (int i = 1; i < argc; ++i) files.emplace_back(argv[i]);
+        // treat all inputs as files
+        for (auto &s : inputs) files.push_back(s);
     }
 
     if (files.empty()) {
@@ -161,12 +201,13 @@ int main(int argc, char **argv) {
 
     std::cout << "Found " << vFiles.size() << " videos and " << aFiles.size() << " audio files.\n";
     std::cout << "Processing " << totalPairs << " pairs.\n";
+    std::cout << "Global volume factor: " << volume_factor << " (" << (volume_factor * 100.0) << "% of original)\n";
 
     for (size_t i = 0; i < totalPairs; ++i) {
-        int r = process_pair_stub(vFiles[i], aFiles[i], (int)i + 1);
+        int r = process_pair_stub(vFiles[i], aFiles[i], (int)i + 1, volume_factor);
         if (r != 0) std::cerr << "Pair " << i + 1 << " returned error code " << r << "\n";
     }
 
-    std::cout << "Prototype run finished (stub). Next: implement encode/mux loop.\n";
+    std::cout << "Prototype run finished (stub). Next: implement encode/mux loop with PCM scaling.\n";
     return 0;
 }
