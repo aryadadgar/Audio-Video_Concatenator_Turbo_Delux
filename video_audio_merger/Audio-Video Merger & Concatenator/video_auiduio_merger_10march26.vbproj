@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net11.0-windows10.0.19041.0</TargetFramework>
+    <RootNamespace>video_auiduio_merger_10march26</RootNamespace>
+    <AssemblyName>video_auiduio_merger_10march26</AssemblyName>
+    <UseWindowsForms>true</UseWindowsForms>
+    
+    <MyType>WindowsForms</MyType>
+    <StartupObject>video_auiduio_merger_10march26.Form1</StartupObject>
+    <EnableVisualBasicRuntime>true</EnableVisualBasicRuntime>
+
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+
+    <SignManifests>false</SignManifests>
+    <SignAssembly>false</SignAssembly>
+    <GetManifestCertificateBeforeRun>false</GetManifestCertificateBeforeRun>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Import Include="System.Data" />
+    <Import Include="System.Drawing" />
+    <Import Include="System.Windows.Forms" />
+  </ItemGroup>
+
+</Project>
