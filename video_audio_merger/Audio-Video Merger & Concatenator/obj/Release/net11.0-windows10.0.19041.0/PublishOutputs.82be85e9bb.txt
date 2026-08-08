@@ -1,8 +1,0 @@
-C:\Users\arya_\Desktop\My Apps\Audio-Video Merger & Concatenator\bin\Release\net11.0-windows10.0.19041.0\publish\video_auiduio_merger_10march26.exe
-C:\Users\arya_\Desktop\My Apps\Audio-Video Merger & Concatenator\bin\Release\net11.0-windows10.0.19041.0\publish\video_auiduio_merger_10march26.dll
-C:\Users\arya_\Desktop\My Apps\Audio-Video Merger & Concatenator\bin\Release\net11.0-windows10.0.19041.0\publish\video_auiduio_merger_10march26.deps.json
-C:\Users\arya_\Desktop\My Apps\Audio-Video Merger & Concatenator\bin\Release\net11.0-windows10.0.19041.0\publish\video_auiduio_merger_10march26.runtimeconfig.json
-C:\Users\arya_\Desktop\My Apps\Audio-Video Merger & Concatenator\bin\Release\net11.0-windows10.0.19041.0\publish\video_auiduio_merger_10march26.dll.config
-C:\Users\arya_\Desktop\My Apps\Audio-Video Merger & Concatenator\bin\Release\net11.0-windows10.0.19041.0\publish\video_auiduio_merger_10march26.pdb
-C:\Users\arya_\Desktop\My Apps\Audio-Video Merger & Concatenator\bin\Release\net11.0-windows10.0.19041.0\publish\Microsoft.Windows.SDK.NET.dll
-C:\Users\arya_\Desktop\My Apps\Audio-Video Merger & Concatenator\bin\Release\net11.0-windows10.0.19041.0\publish\WinRT.Runtime.dll
